@@ -156,20 +156,20 @@ const App = () => {
       )}
       {pageDetails && !errorFetching && (
         <div className='mt-4'>
-          <div className='card'>
-            <h3>Total Followers / Fans</h3>
+          <div className='border-2 rounded-md p-4 flex flex-row m-1'>
+            <h3>Total Followers : / Fans</h3>
             <p>{pageDetails.fans[0].value}</p>
           </div>
-          <div className='card'>
-            <h3>Total Engagement</h3>
+          <div className='border-2 rounded-md p-4 flex flex-row m-1'>
+            <h3>Total Engagement :</h3>
             <p>{pageDetails.engagement[0].value}</p>
           </div>
-          <div className='card'>
-            <h3>Total Impressions</h3>
+          <div className='border-2 rounded-md p-4 flex flex-row m-1'>
+            <h3>Total Impressions :</h3>
             <p>{pageDetails.impressions[0].value}</p>
           </div>
-          <div className='card'>
-            <h3>Total Reactions</h3>
+          <div className='border-2 rounded-md p-4 flex flex-row m-1'>
+            <h3>Total Reactions :</h3>
             <p>{pageDetails.reactions[0].value}</p>
           </div>
         </div>
