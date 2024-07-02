@@ -38,7 +38,6 @@ const App = () => {
             setProfile(response);
             fetchPages();
             setIsLogin(true)
-            console.log("PROFILE ",response);
           });
         } else {
           console.log('User cancelled login or did not fully authorize.');
@@ -62,7 +61,6 @@ const App = () => {
 
     setSelectedPage(event.target.value);
     const selectedPageToken = event.target.options[event.target.selectedIndex].getAttribute('data-token');
-    console.log("selectepoagetokendnfjkashljkfhasdjkfhjkds ; ", event.target.value)
     const data = { pageId: event.target.value, selectedPageToken };
     fetchPageDetails(data);
   };
@@ -76,7 +74,6 @@ const App = () => {
     window.FB.api(
       `/${pageId}/insights?metric=page_fans,page_post_engagements,page_impressions,page_actions_post_reactions_total&period=total_over_range&since=${thirtyDaysAgo}&until=${Math.floor(Date.now() / 1000)}&access_token=${selectedPageToken}`,
       function (response) {
-        console.log("url ; ", `/${pageId}/insights?metric=page_fans,page_post_engagements,page_impressions,page_actions_post_reactions_total&period=lifetime&access_token=${selectedPageToken}`)
         if (response && !response.error) {
           if (response.data.length === 0) {
             setErrorFetching(true);
