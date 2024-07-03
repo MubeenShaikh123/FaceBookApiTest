@@ -36,21 +36,21 @@ const App = () => {
           console.log('Welcome! Fetching your information...');
           window.FB.api('/me', { fields: 'name,picture,email' }, function (response) {
             setProfile(response);
+            console.log("profile", response);
             fetchPages();
-            setIsLogin(true)
           });
         } else {
           console.log('User cancelled login or did not fully authorize.');
-          setIsLogin(false)
         }
       },
-      { scope: 'public_profile,email,pages_show_list' }
+      { scope: 'public_profile,email,pages_show_list,pages_read_engagement,read_insights' }
     );
   };
 
   const fetchPages = () => {
     window.FB.api('/me/accounts', function (response) {
       setPages(response.data);
+      console.log("page is ",response.data);
     });
   };
 
@@ -58,7 +58,7 @@ const App = () => {
     if (event.target.value == 0) {
       return
     }
-
+    console.log("id", event.target.value);
     setSelectedPage(event.target.value);
     const selectedPageToken = event.target.options[event.target.selectedIndex].getAttribute('data-token');
     const data = { pageId: event.target.value, selectedPageToken };
@@ -66,34 +66,36 @@ const App = () => {
   };
 
   const fetchPageDetails = (data) => {
-    const { pageId, selectedPageToken } = data;
-    
-    // Calculate since and until timestamps (e.g., last 30 days)
-    const thirtyDaysAgo = Math.floor(new Date().setDate(new Date().getDate() - 30) / 1000); // Convert milliseconds to seconds
-    
+    let { pageId, selectedPageToken } = data;
+    const url = `/${pageId}/insights?metric=page_fans,page_post_engagements,page_impressions,page_actions_post_reactions_total&access_token=${selectedPageToken}`;
+
     window.FB.api(
-      `/${pageId}/insights?metric=page_fans,page_post_engagements,page_impressions,page_actions_post_reactions_total&period=total_over_range&since=${thirtyDaysAgo}&until=${Math.floor(Date.now() / 1000)}&access_token=${selectedPageToken}`,
+      url,
       function (response) {
-        if (response && !response.error) {
-          if (response.data.length === 0) {
-            setErrorFetching(true);
-          } else {
-            const details = {
-              fans: response.data.find((item) => item.name === 'page_fans').values,
-              engagement: response.data.find((item) => item.name === 'page_post_engagements').values,
-              impressions: response.data.find((item) => item.name === 'page_impressions').values,
-              reactions: response.data.find((item) => item.name === 'page_actions_post_reactions_total').values,
-            };
-            setPageDetails(details);
-            setErrorFetching(false);
-          }
+        console.log("url", url);
+        console.log("response", response);
+        if (response.error) {
+          console.error(response.error.message);
         } else {
-          console.error('Error fetching page details:', response.error);
-          setErrorFetching(true);
+          const latestEngagement = response.data.find((item) => item.name === 'page_post_engagements')?.values[0]?.value || 0;
+          const latestImpressions = response.data.find((item) => item.name === 'page_impressions')?.values[0]?.value || 0;
+          const latestReactions = response.data.find((item) => item.name === 'page_actions_post_reactions_total')?.values[0]?.value.like || 0;
+          const latestFans = response.data.find((item) => item.name === 'page_fans')?.values[0]?.value || 0;
+
+          const details = {
+            engagement: latestEngagement,
+            impressions: latestImpressions,
+            reactions: latestReactions,
+            fans: latestFans,
+          };
+          setPageDetails(details);
+          console.log("pagedetails", details);
         }
       }
     );
   };
+
+
 
   const handleLogout = () => {
     window.FB.logout((response) => {
@@ -107,7 +109,7 @@ const App = () => {
   };
 
   return (
-    <div className={`flex flex-col ${isLogin ? '' : 'justify-center'} items-center bg-blue-300 h-screen w-full text-black`}>
+    <div className={`flex flex-col ${isLogin ? '' : 'justify-center'} items-center bg-blue-300 h-fit min-h-screen w-full text-black`}>
       <div className={`flex ${!isLogin ? 'flex-col ' : 'flex-row'} justify-between w-screen px-8 mb-8 ${isLogin ? 'border-b-2' : ''}`}>
         <h1 className='text-4xl text-black font-semibold py-6 px-4'>Facebook Login and Page Insights</h1>
         {!profile ? (
@@ -152,22 +154,22 @@ const App = () => {
         <h3 className='text-2xl text-red-600 mt-4 p-6'>No insights data found for the specified metrics and period.</h3>
       )}
       {pageDetails && !errorFetching && (
-        <div className='mt-4'>
+        <div className='mt-4 grid'>
           <div className='border-2 rounded-md p-4 flex flex-row m-1'>
-            <h3>Total Followers : / Fans</h3>
-            <p>{pageDetails.fans[0].value}</p>
+            <h3>Total Followers / Fans:  </h3>
+            <p>{pageDetails.fans}</p>
           </div>
           <div className='border-2 rounded-md p-4 flex flex-row m-1'>
-            <h3>Total Engagement :</h3>
-            <p>{pageDetails.engagement[0].value}</p>
+            <h3>Total Engagement:  </h3>
+            <p>{pageDetails.engagement}</p>
           </div>
           <div className='border-2 rounded-md p-4 flex flex-row m-1'>
-            <h3>Total Impressions :</h3>
-            <p>{pageDetails.impressions[0].value}</p>
+            <h3>Total Impressions:  </h3>
+            <p>{pageDetails.impressions}</p>
           </div>
           <div className='border-2 rounded-md p-4 flex flex-row m-1'>
-            <h3>Total Reactions :</h3>
-            <p>{pageDetails.reactions[0].value}</p>
+            <h3>Total Reactions:  </h3>
+            <p>{pageDetails.reactions}</p>
           </div>
         </div>
       )}
