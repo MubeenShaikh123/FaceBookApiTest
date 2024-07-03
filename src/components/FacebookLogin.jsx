@@ -9,6 +9,7 @@ const App = () => {
   const [errorFetching, setErrorFetching] = useState(false);
 
   useEffect(() => {
+    setIsLogin(false)
     window.fbAsyncInit = function () {
       window.FB.init({
         appId: import.meta.env.VITE_APP_ID,
@@ -38,6 +39,7 @@ const App = () => {
             setProfile(response);
             console.log("profile", response);
             fetchPages();
+            setIsLogin(true)
           });
         } else {
           console.log('User cancelled login or did not fully authorize.');
@@ -50,7 +52,7 @@ const App = () => {
   const fetchPages = () => {
     window.FB.api('/me/accounts', function (response) {
       setPages(response.data);
-      console.log("page is ",response.data);
+      console.log("page is ", response.data);
     });
   };
 
@@ -67,8 +69,11 @@ const App = () => {
 
   const fetchPageDetails = (data) => {
     let { pageId, selectedPageToken } = data;
-    const url = `/${pageId}/insights?metric=page_fans,page_post_engagements,page_impressions,page_actions_post_reactions_total&access_token=${selectedPageToken}`;
+    // Calculate since and until timestamps for last thirty days
+    const thirtyDaysAgo = Math.floor(new Date().setDate(new Date().getDate() - 30) / 1000);
+    const now = Math.floor(Date.now() / 1000); // Current timestamp in seconds
 
+    const url = `/${pageId}/insights?metric=page_fans,page_post_engagements,page_impressions,page_actions_post_reactions_total&period=total_over_range&since=${thirtyDaysAgo}&until=${now}&access_token=${selectedPageToken}`;
     window.FB.api(
       url,
       function (response) {
@@ -110,7 +115,7 @@ const App = () => {
 
   return (
     <div className={`flex flex-col ${isLogin ? '' : 'justify-center'} items-center bg-blue-300 h-fit min-h-screen w-full text-black`}>
-      <div className={`flex ${!isLogin ? 'flex-col ' : 'flex-row'} justify-between w-screen px-8 mb-8 ${isLogin ? 'border-b-2' : ''}`}>
+      <div className={`flex ${!isLogin ? ' flex-col' : ' flex-row '} justify-between w-screen px-8 mb-8 ${isLogin ? 'border-b-2' : ''}`}>
         <h1 className='text-4xl text-black font-semibold py-6 px-4'>Facebook Login and Page Insights</h1>
         {!profile ? (
           <button
@@ -130,13 +135,13 @@ const App = () => {
       </div>
       {profile && (
         <div className='text-center'>
-          <div className='flex '>
+          <div className='flex flex-wrap'>
             <img className='w-40 h-40 rounded-full border-2 border-black object-cover' src={profile.picture.data.url} alt='Profile' />
             <div className='text-left ms-10 mt-5'>
-              <p className='text-3xl'>Welcome, <span className='font-bold'>{profile.name}</span></p>
               <p className='text-3xl'>Email: {profile.email}</p>
+              <p className='text-3xl'>Welcome, <span className='font-bold'>{profile.name}</span></p>
               <p className='text-3xl flex flex-row items-center'>Select Page : {pages.length > 0 && (
-                <select onChange={handlePageSelect} value={selectedPage} className='bg-blue-400 border-slate-500 border-2 rounded-md'>
+                <select onChange={handlePageSelect} value={selectedPage} className='bg-blue-400 border-slate-500 border-2 rounded-md mt-2'>
                   <option value={0}>Select a Page</option>
                   {pages.map((page) => (
                     <option key={page.id} value={page.id} data-token={page.access_token}>
@@ -154,22 +159,25 @@ const App = () => {
         <h3 className='text-2xl text-red-600 mt-4 p-6'>No insights data found for the specified metrics and period.</h3>
       )}
       {pageDetails && !errorFetching && (
-        <div className='mt-4 grid'>
-          <div className='border-2 rounded-md p-4 flex flex-row m-1'>
-            <h3>Total Followers / Fans:  </h3>
-            <p>{pageDetails.fans}</p>
-          </div>
-          <div className='border-2 rounded-md p-4 flex flex-row m-1'>
-            <h3>Total Engagement:  </h3>
-            <p>{pageDetails.engagement}</p>
-          </div>
-          <div className='border-2 rounded-md p-4 flex flex-row m-1'>
-            <h3>Total Impressions:  </h3>
-            <p>{pageDetails.impressions}</p>
-          </div>
-          <div className='border-2 rounded-md p-4 flex flex-row m-1'>
-            <h3>Total Reactions:  </h3>
-            <p>{pageDetails.reactions}</p>
+        <div className='w-auto flex flex-col items-center  border-2 m-2'>
+          <h1 className='text-2xl'>Page insights for last 30 days</h1>
+          <div className='mt-4 flex flex-wrap'>
+            <div className='border-2 text-2xl rounded-md p-4 flex flex-row m-1'>
+              <h3>Total Followers / Fans:  </h3>
+              <p>{pageDetails.fans}</p>
+            </div>
+            <div className='border-2 text-2xl rounded-md p-4 flex flex-row m-1'>
+              <h3>Total Engagement:  </h3>
+              <p>{pageDetails.engagement}</p>
+            </div>
+            <div className='border-2 text-2xl rounded-md p-4 flex flex-row m-1'>
+              <h3>Total Impressions:  </h3>
+              <p>{pageDetails.impressions}</p>
+            </div>
+            <div className='border-2 text-2xl rounded-md p-4 flex flex-row m-1'>
+              <h3>Total Reactions:  </h3>
+              <p>{pageDetails.reactions}</p>
+            </div>
           </div>
         </div>
       )}
